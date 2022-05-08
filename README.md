@@ -36,6 +36,10 @@ From here you can put the pointer to your music code like so:
 ```c
 data.ptr = &music;
 ```
+
+Functions passed through `data.ptr` must return `TDAW_CHANNEL` (which is 2 floats making up the left and right audio channel).
+They must also take `float time` and `float samp` (`void* userData` too if you have `TDAW_USERDATA` defined!)
+
 And any userdata can be passed through `data.userData` (make sure `TDAW_USERDATA` is defined!)
 
 Next you must initialise TDAW and open a stream for the sound to begin playing:
@@ -45,7 +49,9 @@ TDAW_openStream(&tdaw, &dat);
 ```
 To close a stream, run `TDAW_closeStream()` and to terminate a TDAW instance run `TDAW_terminate`.
 
-Documentation will come soon. For now poke around in the demo/examples folder.
+Take a look at the demo folder for a basic completed project containing a plucked sine wave.
+
+Documentation will come soon. 
 
 # Dependencies
 - PortAudio
