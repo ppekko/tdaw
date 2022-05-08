@@ -47,9 +47,11 @@ Next you must initialise TDAW and open a stream for the sound to begin playing:
 TDAW_PIP tdaw = TDAW_initTDAW(44100, 1400); //sample rate, frames per buffer
 TDAW_openStream(&tdaw, &dat);
 ```
-To close a stream, run `TDAW_closeStream()` and to terminate a TDAW instance run `TDAW_terminate`.
+To close a stream, run `TDAW_closeStream()` and to terminate a TDAW instance run `TDAW_terminate()`.
 
 Take a look at the demo folder for a basic completed project containing a plucked sine wave.
+
+The example folder contains some more projects.
 
 Documentation will come soon. 
 
