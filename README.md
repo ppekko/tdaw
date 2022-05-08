@@ -19,7 +19,6 @@ Before including TDAW, you must first `#define TDAW_IMPLEMENTATION` in *one* C/C
 There are various features you can activate by defining the following lines:
 
 ```c
-#define TDAW_IMPLEMENTATION // Implements TDAW
 #define TDAW_NOTATION // Access notation management
 #define TDAW_USERDATA // Allow user data to be passed to your stream
 #define TDAW_BPM // Access BPM calculation functions.
@@ -42,7 +41,7 @@ And any userdata can be passed through `data.userData` (make sure `TDAW_USERDATA
 Next you must initialise TDAW and open a stream for the sound to begin playing:
 ```c
 TDAW_PIP tdaw = TDAW_initTDAW(44100, 1400); //sample rate, frames per buffer
-TDAW_openStream(&tdawm &dat);
+TDAW_openStream(&tdaw, &dat);
 ```
 To close a stream, run `TDAW_closeStream()` and to terminate a TDAW instance run `TDAW_terminate`.
 
