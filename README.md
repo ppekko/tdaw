@@ -57,3 +57,9 @@ Documentation will come soon.
 
 # Dependencies
 - PortAudio
+
+# Future
+
+- PipeWire Backend
+- More size reduction
+- A windows build
