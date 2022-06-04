@@ -382,17 +382,13 @@ void TDAW_closeStream(TDAW_PIP *tdp)
 }
 
 //* Terminates TDAW
-void TDAW_terminate(TDAW_PIP *tdp)
+void TDAW_terminate()
 {
 #ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: Terminate called with %p as pip\n", (void *)tdp);
+  printf("TDAW-DEBUG: TDAW terminated.\n");
   fflush(NULL);
 #endif
   Pa_Terminate();
-#ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: pip with pointer %p terminated\n", (void *)tdp);
-  fflush(NULL);
-#endif
 }
 
 #endif

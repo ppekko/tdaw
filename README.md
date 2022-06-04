@@ -60,6 +60,6 @@ Documentation will come soon.
 
 # Future
 
-- PipeWire Backend
+- ALSA Backend
 - More size reduction
 - A windows build
