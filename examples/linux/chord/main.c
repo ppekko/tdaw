@@ -51,7 +51,7 @@ void _start()
 
     TDAW_closeStream(&tdaw);
 
-    TDAW_terminate(&tdaw);
+    TDAW_terminate();
 
     asm(
         "movl $1,%eax\n"

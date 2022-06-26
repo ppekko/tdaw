@@ -6,7 +6,7 @@ A tiny, header only, easy to use, cross-platform, portaudio wrapper, sound and n
 
 This header enables you to do shader-like sound programming (similar to that of [ShaderToy](https://shadertoy.com "ShaderToy")) inside of C/C++ incredibly easy. It also comes with various ease-of-use functions such as BPM calculations and notation management.
 
-Currently the sine wave demo on Linux compiles to 1.8kb (Arch Linux, 1889 bytes, demo/linux)
+Currently the sine wave demo on Linux compiles to 1.8kb (Arch Linux, 1862 bytes, demo/linux compiled with clang)
 
 <p align="center">
 <img src="./brand/icon.png" alt="drawing" width="200" height="200"/>
