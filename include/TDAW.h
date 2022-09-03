@@ -23,8 +23,12 @@
 //              before including this header in *one* C/C++ file to pass userdata to your stream.
 //
 //              Insert the line
-//                  #define TDAW_BPM
-//              before including this header in *one* C/C++ file to access BPM calculation functions.
+//                  #define TDAW_BACKEND_PORTAUDIO
+//              before including this header in *one* C/C++ file to use PortAudio as a backend
+//
+//              Insert the line
+//                  #define TDAW_BACKEND_ALSA
+//              before including this header in *one* C/C++ file to use ALSA as a backend
 //
 //              Insert the line
 //                  #define TDAW_PESYNTH
@@ -32,23 +36,33 @@
 //
 //              Insert the line
 //                  #define TDAW_DEBUGTEXT
-//              before including this header in *one* C/C++ file to print debug text to console.(This takes up 40 bytes)
+//              before including this header in *one* C/C++ file to print debug text to console.
 //
 //              Insert the line
 //                  #define TDAW_DEBUGIMGUI
 //              before including this header in *one* C++ file to create ImGui windows for debugging.
 //
-//
+//              Insert the line
+//                  #define TDAW_UTILS
+//              before including this header in *one* C/C++ file to get some utility functions.
 
 #ifdef TDAW_IMPLEMENTATION
 // -----------------------
 //      includes
 // -----------------------
+
 #include <stdint.h>
 #include <unistd.h>
-#include "portaudio.h"
-#include <unistd.h>
 #include <stdlib.h>
+
+#ifdef TDAW_BACKEND_PORTAUDIO
+#include "portaudio.h"
+#endif
+
+#ifdef TDAW_BACKEND_ALSA
+#include <pthread.h>
+#include <alsa/asoundlib.h>
+#endif
 
 #ifdef TDAW_DEBUGIMGUI
 #include "imgui.h"
@@ -57,19 +71,14 @@
 
 #ifdef TDAW_PESYNTH
 #include <math.h>
+#define TDAW_UTILS
 #endif
+
+
 
 // -----------------------
 //      containers
 // -----------------------
-
-//* A TDAW Instance
-typedef struct
-{
-  uint_fast16_t samplerate;
-  uint_fast16_t fpb;
-  PaStream *stream;
-} TDAW_PIP;
 
 //* An audio channel
 typedef struct
@@ -77,6 +86,15 @@ typedef struct
   float left;
   float right;
 } TDAW_CHANNEL;
+
+#ifdef TDAW_BACKEND_PORTAUDIO
+//* A TDAW Instance
+typedef struct
+{
+  uint_fast16_t samplerate;
+  uint_fast16_t fpb;
+  PaStream *stream;
+} TDAW_PIP;
 
 //* Data to be passed through to PortAudio
 typedef struct
@@ -97,19 +115,40 @@ typedef struct
   float values[2048];
 #endif
 } TDAW_PASSDATA;
+#endif
 
-#ifdef TDAW_BPM
-//* BPM Data
+#ifdef TDAW_BACKEND_ALSA
+//* A TDAW Instance
 typedef struct
 {
-  uint_fast8_t bpm;
-  float tbb;         // time between each beat
-  float lb;          // time on last beat
-  float lba;         // time on last bar
-  uint_fast16_t cbf; // total beats
-  uint_fast16_t cb;  // current beat
-  uint_fast16_t bp;  // total bars
-} TDAW_bpmData;
+  uint_fast16_t samplerate;
+  uint_fast16_t fpb;
+  snd_pcm_t *handle;
+  pthread_t thread;
+} TDAW_PIP;
+
+//* Data to be passed through to ALSA
+typedef struct
+{
+#ifdef TDAW_USERDATA
+  TDAW_CHANNEL (*ptr)
+  (void *userData, float time, float samp);
+#else
+  TDAW_CHANNEL (*ptr)
+  (float time, float samp);
+#endif
+#ifdef TDAW_USERDATA
+  void *userData;
+#endif
+#ifdef TDAW_DEBUGIMGUI
+  uint_fast16_t fpb;
+  float values[2048];
+#endif
+  float samplerate;
+  uint_fast64_t songd; //current buffer position
+  TDAW_PIP *pip;       //pointer to TDAW_PIP
+} TDAW_PASSDATA;
+
 #endif
 
 #ifdef TDAW_NOTATION
@@ -135,9 +174,10 @@ typedef struct
 #endif
 
 // -------------------------
-//     synth functions
+//     util functions
 // -------------------------
 
+#ifdef TDAW_UTILS
 //* Custs off TDAW_CHANNEL at a given peak.
 void TDAW_hardLimiter(TDAW_CHANNEL *channel, float peak)
 {
@@ -181,38 +221,6 @@ void TDAW_adjustVol(TDAW_CHANNEL *d, float i)
 {
   d->left *= i;
   d->right *= i;
-}
-
-// --------------------------
-//       BPM functions
-// --------------------------
-
-#ifdef TDAW_BPM
-
-//* Calculate values for TDAW_bpmData
-void TDAW_BPM_calculateBPMData(TDAW_bpmData *b, int t, int f)
-{
-  b->tbb = 1. / (b->bpm / 60.);
-  b->cbf = int(t / b->tbb);
-  if (b->cbf >= 2)
-  {
-    if (b->cbf % 4 == 0)
-    {
-      b->bp = b->cbf / 4;
-      b->cb = b->cbf - (b->bp * 4);
-    }
-    else
-    {
-      b->cb = b->cbf - (b->bp * 4);
-    }
-  }
-  else
-  {
-    b->cb = b->cbf;
-  }
-
-  b->lb = (float(b->cbf) * b->tbb);
-  b->lba = b->lb - (float(b->cb) * b->tbb);
 }
 
 #endif
@@ -269,11 +277,12 @@ void TDAW_imguiPlot(TDAW_PASSDATA *data)
 //     general functions
 // -------------------------
 
+#ifdef TDAW_BACKEND_PORTAUDIO //! PORTAUDIO BACKEND
 //* Create a TDAW Instance
 TDAW_PIP TDAW_initTDAW(uint_fast16_t samplerate, uint_fast16_t fpb)
 {
 #ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: Initiate called with %i as samplerate and %i aa buffersize\n", (int)samplerate, (int)fpb);
+  printf("TDAW-DEBUG: Init called with %i as samplerate and %i as buffersize\n", (int)samplerate, (int)fpb);
   fflush(NULL);
 #endif
   TDAW_PIP base;
@@ -295,7 +304,7 @@ static int tdc(const void *inputBuffer, void *outputBuffer, unsigned long frames
   (void)timeInfo;
   (void)statusFlags;
   (void)inputBuffer;
-  static uint_fast64_t fpbRes;
+  static uint_fast64_t fpbRes;  // keeps track of how big the current buffer is before it is sent to ALSA
   if (data->songd < framesPerBuffer)
   {
     fpbRes = framesPerBuffer;
@@ -390,6 +399,110 @@ void TDAW_terminate()
 #endif
   Pa_Terminate();
 }
+#endif
+
+#ifdef TDAW_BACKEND_ALSA //! ALSA BACKEND
+
+//* Create a TDAW Instance
+TDAW_PIP TDAW_initTDAW(uint_fast16_t samplerate, uint_fast16_t fpb)
+{
+#ifdef TDAW_DEBUGTEXT
+  printf("TDAW-DEBUG: Init called with %i as samplerate and %i as buffersize\n", (int)samplerate, (int)fpb);
+  fflush(NULL);
+#endif
+  TDAW_PIP tda;
+  tda.samplerate = samplerate;
+  tda.fpb = fpb;
+  snd_pcm_open(&tda.handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
+
+  snd_pcm_set_params(tda.handle, SND_PCM_FORMAT_FLOAT, SND_PCM_ACCESS_RW_INTERLEAVED, 2, tda.samplerate, 1, 500000);
+#ifdef TDAW_DEBUGTEXT
+  printf("TDAW-DEBUG: TDAW Initiated\n");
+  fflush(NULL);
+#endif
+  return tda;
+}
+
+//* Opens a stream
+void tdc(TDAW_PASSDATA *p)
+{
+  u_int64_t fpbRes = 0; // keeps track of how big the current buffer is before it is sent to ALSA
+  while (1)
+  {
+
+    if (p->songd < p->pip->fpb)
+    {
+      fpbRes = p->pip->fpb;
+    }
+    else
+    {
+      fpbRes = p->pip->fpb * ((p->songd / p->pip->fpb) + 1);
+    }
+    for (p->songd = p->songd; p->songd <= fpbRes; p->songd++)
+    {
+      TDAW_CHANNEL out = p->ptr((float)p->songd / p->samplerate, p->samplerate);
+      snd_pcm_writei(p->pip->handle, &out, 1.);
+#ifdef TDAW_DEBUGIMGUI
+      p->values[abs((int)(p->songd - fpbRes))] = out.left;
+#endif
+    }
+  }
+}
+
+//* Opens a stream
+void TDAW_openStream(TDAW_PIP *pip, TDAW_PASSDATA *passdata)
+{
+#ifdef TDAW_DEBUGTEXT
+#ifdef TDAW_USERDATA
+  printf("TDAW-DEBUG: Open Stream called with %p as callback function and %p as user data\n", (void *)&passdata->ptr, (void *)&passdata->userData);
+  fflush(NULL);
+#else
+  printf("TDAW-DEBUG: Open Stream called with %p as callback function\n", (void *)&passdata->ptr);
+  fflush(NULL);
+#endif
+#endif
+  passdata->pip = pip;
+  passdata->samplerate = pip->samplerate;
+  passdata->songd = 0;
+#ifdef TDAW_DEBUGIMGUI
+  data->fpb = tdp->fpb;
+#endif
+  pthread_create(&pip->thread, NULL, (void *)tdc, passdata);
+#ifdef TDAW_DEBUGTEXT
+#ifdef TDAW_USERDATA
+  printf("TDAW-DEBUG: Stream with callback and userdata as %p and %p opened\n", (void *)&passdata->ptr, (void *)&passdata->userData);
+  fflush(NULL);
+#else
+  printf("TDAW-DEBUG: Stream with callback as %p opened\n", (void *)&passdata->ptr);
+  fflush(NULL);
+#endif
+#endif
+}
+
+void TDAW_closeStream(TDAW_PIP *pip)
+{
+#ifdef TDAW_DEBUGTEXT
+  printf("TDAW-DEBUG: Close stream called with %p as pip\n", (void *)pip);
+  fflush(NULL);
+#endif
+  pthread_cancel(pip->thread);
+  snd_pcm_close(pip->handle);
+#ifdef TDAW_DEBUGTEXT
+  printf("TDAW-DEBUG: Stream with %p as pip closed\n", (void *)pip);
+  fflush(NULL);
+#endif
+}
+
+void TDAW_terminate(TDAW_PIP *pip)
+{
+#ifdef TDAW_DEBUGTEXT
+  printf("TDAW-DEBUG: TDAW terminated.\n");
+  fflush(NULL);
+#endif
+  snd_pcm_close(pip->handle);
+}
+
+#endif
 
 #endif
 

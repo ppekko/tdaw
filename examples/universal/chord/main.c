@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #define TDAW_IMPLEMENTATION
+#define TDAW_BACKEND_PORTAUDIO
 #define TDAW_NOTATION
 #define TDAW_PESYNTH
 #include "../../../include/TDAW.h"
@@ -49,9 +50,11 @@ void _start()
 
     while(1){}
 
-    TDAW_closeStream(&tdaw);
+    //TDAW_closeStream(&tdaw);
 
-    TDAW_terminate();
+    //TDAW_terminate();
+    
+    //termination commands are not needed in this case as the program will never reach them 
 
     asm(
         "movl $1,%eax\n"

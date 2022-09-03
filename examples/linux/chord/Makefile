@@ -3,7 +3,7 @@ SOURCE	= main.c
 OUT	= 0
 CC	 = clang
 FLAGS	 = -nostartfiles  -Wall -fomit-frame-pointer -fmerge-all-constants -fno-math-errno -Wall -ffast-math  -fno-unroll-loops -Os -nodefaultlibs
-LFLAGS	 = -lc -ldl -lportaudio -lm
+LFLAGS	 = -lc -ldl -lasound -lm
 
 
 all: $(OBJS)
