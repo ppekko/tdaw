@@ -2,11 +2,11 @@
 
 # TDAW
 
-A tiny, header only, easy to use, cross-platform, portaudio wrapper, sound and notation manager, tailored for the demo scene.
+A tiny, header only, easy to use, cross-platform, portaudio/alsa wrapper, sound and notation manager, tailored for the demo scene.
 
 This header enables you to do shader-like sound programming (similar to that of [ShaderToy](https://shadertoy.com "ShaderToy")) inside of C/C++ incredibly easy. It also comes with various ease-of-use functions such as BPM calculations and notation management.
 
-Currently the sine wave demo on Linux compiles to 1.8kb (Arch Linux, 1862 bytes, demo/linux compiled with clang)
+Currently the sine wave demo on Linux compiles to 1.6kb (Arch Linux, 1647 bytes, demo/linux compiled with clang)
 
 <p align="center">
 <img src="./brand/icon.png" alt="drawing" width="200" height="200"/>
@@ -16,12 +16,17 @@ Currently the sine wave demo on Linux compiles to 1.8kb (Arch Linux, 1862 bytes,
 
 Before including TDAW, you must first `#define TDAW_IMPLEMENTATION` in *one* C/C++ file.
 
+You then must select a backend, the following are:
+
+ - PortAudio `#define TDAW_BACKEND_PORTAUDIO`
+ - ALSA `#define TDAW_BACKEND_ALSA`
+
 There are various features you can activate by defining the following lines:
 
 ```c
 #define TDAW_NOTATION // Access notation management
 #define TDAW_USERDATA // Allow user data to be passed to your stream
-#define TDAW_BPM // Access BPM calculation functions.
+#define TDAW_UTILS // Access to some utility functions.
 #define TDAW_PESYNTH // Access basic example synthesizers.
 #define TDAW_DEBUGTEXT // Output debug text to console
 #define TDAW_DEBUGIMGUI // Create ImGui Windows for debugging (C++ only)
@@ -56,10 +61,8 @@ The example folder contains some more projects.
 Documentation will come soon. 
 
 # Dependencies
-- PortAudio
+- PortAudio or ALSA depending on what backend you want to use
 
 # Future
 
-- ALSA Backend
-- More size reduction
 - A windows build

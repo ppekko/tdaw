@@ -15,20 +15,20 @@
 //              before including this header in *one* C/C++ file to create the implementation.
 //
 //              Insert the line
-//                  #define TDAW_NOTATION
-//              before including this header in *one* C/C++ file to access notation managment.
-//
-//              Insert the line
-//                  #define TDAW_USERDATA
-//              before including this header in *one* C/C++ file to pass userdata to your stream.
-//
-//              Insert the line
 //                  #define TDAW_BACKEND_PORTAUDIO
 //              before including this header in *one* C/C++ file to use PortAudio as a backend
 //
 //              Insert the line
 //                  #define TDAW_BACKEND_ALSA
 //              before including this header in *one* C/C++ file to use ALSA as a backend
+//
+//              Insert the line
+//                  #define TDAW_NOTATION
+//              before including this header in *one* C/C++ file to access notation managment.
+//
+//              Insert the line
+//                  #define TDAW_USERDATA
+//              before including this header in *one* C/C++ file to pass userdata to your stream.
 //
 //              Insert the line
 //                  #define TDAW_PESYNTH
@@ -44,7 +44,7 @@
 //
 //              Insert the line
 //                  #define TDAW_UTILS
-//              before including this header in *one* C/C++ file to get some utility functions.
+//              before including this header in *one* C/C++ file to access to some utility functions.
 
 #ifdef TDAW_IMPLEMENTATION
 // -----------------------
@@ -73,8 +73,6 @@
 #include <math.h>
 #define TDAW_UTILS
 #endif
-
-
 
 // -----------------------
 //      containers
@@ -131,10 +129,10 @@ typedef struct
 typedef struct
 {
 #ifdef TDAW_USERDATA
-  TDAW_CHANNEL (*ptr)
+  TDAW_CHANNEL(*ptr)
   (void *userData, float time, float samp);
 #else
-  TDAW_CHANNEL (*ptr)
+  TDAW_CHANNEL(*ptr)
   (float time, float samp);
 #endif
 #ifdef TDAW_USERDATA
@@ -304,7 +302,7 @@ static int tdc(const void *inputBuffer, void *outputBuffer, unsigned long frames
   (void)timeInfo;
   (void)statusFlags;
   (void)inputBuffer;
-  static uint_fast64_t fpbRes;  // keeps track of how big the current buffer is before it is sent to ALSA
+  static uint_fast64_t fpbRes; // keeps track of how big the current buffer is before it is sent to ALSA
   if (data->songd < framesPerBuffer)
   {
     fpbRes = framesPerBuffer;
@@ -509,7 +507,7 @@ void TDAW_terminate(TDAW_PIP *pip)
 //
 // >The MIT License (MIT)
 //
-// >Copyright (c) 2021 kbx
+// >Copyright (c) 2022 kbx
 //
 // >Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal

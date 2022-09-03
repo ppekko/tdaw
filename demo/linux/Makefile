@@ -11,8 +11,6 @@ all: $(OBJS)
 	strip -s -R .comment -R .gnu.version $(OUT)
 	sstrip $(OUT)
 	./bettergz.sh $(OUT)
-	@echo "Size of $(OUT):"
-	@ls -l $(OUT) | awk '{print $$5}'
 	
 
 main.o: main.c
