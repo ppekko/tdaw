@@ -7,7 +7,7 @@
    viewBox="0 0 500 150"
    version="1.1"
    id="svg5"
-   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04, custom)"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14, custom)"
    sodipodi:docname="banner.svg"
    inkscape:export-filename="/run/media/yaz/Very Cool Drive/Demo/TDAW/TDAW/brand/banner.png"
    inkscape:export-xdpi="180.00133"
@@ -27,13 +27,13 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.5"
-     inkscape:cx="905"
-     inkscape:cy="585"
+     inkscape:zoom="0.35355339"
+     inkscape:cx="892.36876"
+     inkscape:cy="612.35447"
      inkscape:window-width="1920"
-     inkscape:window-height="1007"
-     inkscape:window-x="2018"
-     inkscape:window-y="40"
+     inkscape:window-height="1019"
+     inkscape:window-x="1920"
+     inkscape:window-y="43"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1"
      inkscape:snap-bbox="true"
@@ -42,7 +42,9 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:snap-bbox-midpoints="true"
      inkscape:object-paths="true"
-     inkscape:snap-intersection-paths="true" />
+     inkscape:snap-intersection-paths="true"
+     inkscape:showpageshadow="0"
+     inkscape:deskcolor="#505050" />
   <defs
      id="defs2">
     <linearGradient
@@ -184,7 +186,7 @@
        height="146.32451"
        x="1.8377447"
        y="1.8377447"
-       inkscape:export-filename="/run/media/yaz/Very Cool Drive/Demo/TDAW/TDAW/brand/banner.png"
+       inkscape:export-filename="banner.png"
        inkscape:export-xdpi="108.37333"
        inkscape:export-ydpi="108.37333" />
     <rect
@@ -201,38 +203,38 @@
        xml:space="preserve"
        transform="matrix(0.26458333,0,0,0.26458333,-93.152265,39.818887)"
        id="text9140-7"
-       style="font-style:normal;font-weight:normal;font-size:64px;line-height:0.9;font-family:sans-serif;white-space:pre;shape-inside:url(#rect9142-4);fill:#000000;fill-opacity:1;stroke:none"
+       style="font-style:normal;font-weight:normal;font-size:64px;line-height:0.9;font-family:sans-serif;white-space:pre;shape-inside:url(#rect9142-4);display:inline;fill:#000000;fill-opacity:1;stroke:none"
        inkscape:export-filename="/run/media/yaz/Very Cool Drive/Demo/TDAW/TDAW/brand/banner.png"
        inkscape:export-xdpi="108.37333"
        inkscape:export-ydpi="108.37333"><tspan
          x="427.66211"
          y="120.85895"
-         id="tspan943"><tspan
+         id="tspan525"><tspan
            style="font-family:'PF Arma Five';-inkscape-font-specification:'PF Arma Five';fill:#ffffff"
-           id="tspan941">a Tiny Header Only, cross-platform, PortAudio
+           id="tspan523">a Tiny Header Only, cross-platform, PortAudio/
 </tspan></tspan><tspan
          x="427.66211"
-         y="182.19759"
-         id="tspan947"><tspan
+         y="180.59058"
+         id="tspan529"><tspan
            style="font-family:'PF Arma Five';-inkscape-font-specification:'PF Arma Five';fill:#ffffff"
-           id="tspan945">wrapper, sound and notation manager written in C, </tspan></tspan><tspan
+           id="tspan527">alsa wrapper, sound and notation manager written </tspan></tspan><tspan
          x="427.66211"
-         y="243.53622"
-         id="tspan951"><tspan
+         y="240.3222"
+         id="tspan533"><tspan
            style="font-family:'PF Arma Five';-inkscape-font-specification:'PF Arma Five';fill:#ffffff"
-           id="tspan949">tailored for the demoscene
+           id="tspan531">in C, tailored for the demoscene
 </tspan></tspan><tspan
          x="427.66211"
-         y="304.87486"
-         id="tspan955"><tspan
+         y="300.05383"
+         id="tspan537"><tspan
            style="font-family:'PF Arma Five';-inkscape-font-specification:'PF Arma Five';fill:#ffffff"
-           id="tspan953">
+           id="tspan535">
 </tspan></tspan><tspan
          x="427.66211"
-         y="366.2135"
-         id="tspan959"><tspan
+         y="359.78546"
+         id="tspan541"><tspan
            style="font-family:'PF Arma Five';-inkscape-font-specification:'PF Arma Five';fill:#ffffff"
-           id="tspan957">by kbx</tspan></tspan></text>
+           id="tspan539">by kbx</tspan></tspan></text>
     <rect
        style="fill:none;fill-opacity:0;stroke:#ffffff;stroke-width:1.92036;stroke-linecap:round;paint-order:markers fill stroke"
        id="rect846-8"
