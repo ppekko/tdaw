@@ -3,6 +3,7 @@
 
 
 #define TDAW_BACKEND_ALSA
+#define TDAW_PRERENDER 5
 #define TDAW_IMPLEMENTATION
 #include "../../include/TDAW.h"
 
@@ -28,9 +29,11 @@ void _start()
     TDAW_PASSDATA dat;
     dat.ptr = &test;
 
-    TDAW_openStream(&tdaw, &dat);
+    TDAW_prerender(&tdaw, &dat); //prerender audio
 
-    while(1){} 
+    TDAW_playPrerender(&dat); //play prerendered audio
+
+    pthread_join(tdaw.thread, NULL); // not needed if you are making a demo, saves cpu in our instance by waiting for music thread to end.
 
     //TDAW_closeStream(&tdaw);
 
