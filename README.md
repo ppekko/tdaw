@@ -2,9 +2,9 @@
 
 # TDAW
 
-A tiny, header only, easy to use, cross-platform, portaudio/alsa wrapper, sound and notation manager, tailored for the demo scene.
+A tiny, header only, easy to use, cross-platform, portaudio/alsa wrapper, tailored for the demo scene.
 
-This header enables you to do shader-like sound programming (similar to that of [ShaderToy](https://shadertoy.com "ShaderToy")) inside of C/C++ incredibly easy. It also comes with various ease-of-use functions such as BPM calculations and notation management.
+This header enables you to do shader-like sound programming (similar to that of [ShaderToy](https://shadertoy.com "ShaderToy")) inside of C/C++ incredibly easy.
 
 Currently the sine wave demo on Linux compiles to 1.1kb (Arch Linux, 1153 bytes, demo/linux compiled with gcc and packed with vondehi).
 
