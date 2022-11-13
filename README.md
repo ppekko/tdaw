@@ -50,9 +50,10 @@ They must also take `float time` and `float samp` (`void* userData` too if you h
 
 And any userdata can be passed through `data.userData` (make sure `TDAW_USERDATA` is defined!)
 
-Next you must initialise TDAW and open a stream for the sound to begin playing:
+Next you must initialise TDAW and open a stream for the sound to begin playing.
+Set a sample rate and a FPB. If your audio lags, try increasing the FPB:
 ```c
-TDAW_PIP tdaw = TDAW_initTDAW(44100, 1400); //sample rate, frames per buffer
+TDAW_PIP tdaw = TDAW_initTDAW(44100, 512); //sample rate, frames per buffer
 TDAW_openStream(&tdaw, &dat);
 ```
 If you are planning to prerender your audio, TDAW_openStream() is not needed, instead do the following:
@@ -70,6 +71,7 @@ Documentation will come soon.
 
 # Dependencies
 - PortAudio or ALSA depending on what backend you want to use
+- NASM and Python for vondehi
 
 # Future
 - PortAudio prerendering support
