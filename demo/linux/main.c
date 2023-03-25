@@ -24,15 +24,10 @@ void _start()
     asm volatile("push %rax\n");
 
     TDAW_PIP tdaw = TDAW_initTDAW(44100, 1024);
-
-    TDAW_PASSDATA dat;
-    dat.ptr = &test;
-
-    TDAW_openStream(&tdaw, &dat);
-
-    while(1){} 
-
-    //TDAW_closeStream(&tdaw);
+    
+    while(1){
+      TDAW_render(&tdaw, &test);
+    }
 
     //TDAW_terminate(&tdaw);
     

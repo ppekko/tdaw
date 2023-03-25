@@ -2,7 +2,7 @@ OBJS	= main.o
 SOURCE	= main.c
 OUT	= 0
 CC	 = gcc
-FLAGS	 = -Os -nostartfiles -nodefaultlibs -lc -fno-plt -fno-stack-protector -fno-stack-check -fno-unwind-tables -fno-asynchronous-unwind-tables -fomit-frame-pointer -ffast-math -no-pie -fno-pic -fno-PIE -ffunction-sections -fdata-sections -fno-plt -fmerge-all-constants -mno-fancy-math-387 -mno-ieee-fp
+FLAGS	 = -Os -nostartfiles -nodefaultlibs -fno-plt -fno-stack-protector -fno-stack-check -fno-unwind-tables -fno-asynchronous-unwind-tables -fomit-frame-pointer -ffast-math -no-pie -fno-pic -fno-PIE -ffunction-sections -fdata-sections -fno-plt -fmerge-all-constants -mno-fancy-math-387 -mno-ieee-fp
 LFLAGS	 = -lc -ldl -lm -lasound 
 
 

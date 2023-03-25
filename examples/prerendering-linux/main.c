@@ -28,14 +28,13 @@ void _start()
 
     TDAW_PASSDATA dat;
     dat.ptr = &test;
+    
 
     TDAW_prerender(&tdaw, &dat); //prerender audio
 
-    TDAW_playPrerender(&dat); //play prerendered audio
-
-    pthread_join(tdaw.thread, NULL); // not needed if you are making a demo, saves cpu in our instance by waiting for music thread to end.
-
-    //TDAW_closeStream(&tdaw);
+    while(1){
+      TDAW_playPrerender(&dat); //play prerendered audio
+    }
 
     //TDAW_terminate(&tdaw);
     

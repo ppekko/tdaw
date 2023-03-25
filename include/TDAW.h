@@ -59,12 +59,15 @@
 //              song instead of generating it on the fly.
 //              This feature is only available with TDAW_BACKEND_ALSA
 //
+//              Insert the line
+//                  #define TDAW_MULTITHREAD
+//              before including this header in *one* C/C++ file to enable multithreaded playback. ALSA only
+//
+
 
 //#define TDAW_BACKEND_ALSA
 //#define TDAW_IMPLEMENTATION
 //#define TDAW_PRERENDER 10
-#pragma once
-
 #pragma once
 
 #ifdef TDAW_IMPLEMENTATION
@@ -108,12 +111,12 @@ typedef struct {
 #ifdef TDAW_BACKEND_PORTAUDIO
 //* A TDAW Instance
 typedef struct {
-  uint_fast16_t samplerate;
-  uint_fast16_t fpb;
+  uint samplerate;
+  uint fpb;
   PaStream* stream;
 #ifdef TDAW_PRERENDER
   TDAW_CHANNEL* prerender;
-  uint_fast32_t prerender_size;
+  uint prerender_size;
 #endif
 } TDAW_PIP;
 
@@ -129,9 +132,9 @@ typedef struct {
 #ifdef TDAW_USERDATA
   void* userData;
 #endif
-  uint_fast64_t songd;
+  uint songd;
 #ifdef TDAW_DEBUGIMGUI
-  uint_fast16_t fpb;
+  uint fpb;
   float values[2048];
 #endif
 } TDAW_PASSDATA;
@@ -140,13 +143,19 @@ typedef struct {
 #ifdef TDAW_BACKEND_ALSA
 //* A TDAW Instance
 typedef struct {
-  uint_fast16_t samplerate;
-  uint_fast16_t fpb;
+  uint samplerate;
+  uint fpb;
   snd_pcm_t* handle;
   pthread_t thread;
+#ifndef TDAW_MULTITHREAD
+  uint fpbRes;
+  float songtime;
+#endif
+  uint songd;  // current buffer position
 } TDAW_PIP;
 
 //* Data to be passed through to ALSA
+
 typedef struct {
 #ifdef TDAW_USERDATA
   TDAW_CHANNEL(*ptr)
@@ -159,18 +168,17 @@ typedef struct {
   void* userData;
 #endif
 #ifdef TDAW_DEBUGIMGUI
-  uint_fast16_t fpb;
+  uint fpb;
   float values[2048];
 #endif
 #ifdef TDAW_PRERENDER
   TDAW_CHANNEL* prerender;
-  uint_fast32_t prerender_size;
+  uint prerender_size;
 #endif
-  float samplerate;
-  uint_fast64_t songd;  // current buffer position
-  TDAW_PIP* pip;        // pointer to TDAW_PIP
-} TDAW_PASSDATA;
 
+  TDAW_PIP* pip;        // pointer to TDAW_PIP
+  float samplerate;
+} TDAW_PASSDATA;
 #endif
 
 // -------------------------
@@ -271,7 +279,7 @@ void TDAW_imguiPlot(TDAW_PASSDATA* data) {
 
 #ifdef TDAW_BACKEND_PORTAUDIO  //! PORTAUDIO BACKEND
 //* Create a TDAW Instance
-TDAW_PIP TDAW_initTDAW(uint_fast16_t samplerate, uint_fast16_t fpb) {
+TDAW_PIP TDAW_initTDAW(uint samplerate, uint fpb) {
 #ifdef TDAW_DEBUGTEXT
   printf("TDAW-DEBUG: Init called with %i as samplerate and %i as buffersize\n",
          (int)samplerate, (int)fpb);
@@ -298,7 +306,7 @@ static int __tdaw_tdc(const void* inputBuffer, void* outputBuffer,
   (void)timeInfo;
   (void)statusFlags;
   (void)inputBuffer;
-  static uint_fast64_t fpbRes;  // keeps track of how big the current buffer is
+  static uint fpbRes;  // keeps track of how big the current buffer is
   // before it is sent to ALSA
   if (data->songd < framesPerBuffer) {
     fpbRes = framesPerBuffer;
@@ -402,7 +410,7 @@ void TDAW_terminate() {
 #ifdef TDAW_BACKEND_ALSA  //! ALSA BACKEND
 
 //* Create a TDAW Instance
-TDAW_PIP TDAW_initTDAW(uint_fast16_t samplerate, uint_fast16_t fpb) {
+TDAW_PIP TDAW_initTDAW(uint samplerate, uint fpb) {
 #ifdef TDAW_DEBUGTEXT
   printf("TDAW-DEBUG: Init called with %i as samplerate and %i as buffersize\n",
          (int)samplerate, (int)fpb);
@@ -411,7 +419,13 @@ TDAW_PIP TDAW_initTDAW(uint_fast16_t samplerate, uint_fast16_t fpb) {
   TDAW_PIP tda;
   tda.samplerate = samplerate;
   tda.fpb = fpb;
+  tda.songd = 0;
   snd_pcm_open(&tda.handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
+
+#ifndef TDAW_MULTITHREAD
+  tda.fpbRes = 0;
+  tda.songtime = 0.f;
+#endif
 
   snd_pcm_set_params(tda.handle, SND_PCM_FORMAT_FLOAT,SND_PCM_ACCESS_RW_INTERLEAVED, 2, tda.samplerate, 1, 500000);
 #ifdef TDAW_DEBUGTEXT
@@ -421,10 +435,15 @@ TDAW_PIP TDAW_initTDAW(uint_fast16_t samplerate, uint_fast16_t fpb) {
   return tda;
 }
 
+#ifdef TDAW_MULTITHREAD
 #ifdef TDAW_PRERENDER
 void __tdaw_tdc(TDAW_PASSDATA* p) {
-  for (p->songd = 0; p->songd < p->prerender_size; p->songd++) {
-    snd_pcm_writei(p->pip->handle, &p->prerender[p->songd], 1.);
+  for (p->pip->songd = 0; p->pip->songd < p->prerender_size; p->pip->songd++) {
+    snd_pcm_writei(p->pip->handle, &p->prerender[p->pip->songd], 1.);
+    while (snd_pcm_state(p->pip->handle) == SND_PCM_STATE_RUNNING){
+		if (snd_pcm_avail_update(p->pip->handle) > 0){ break;}
+      snd_pcm_wait(p->pip->handle, 10000);
+    }
   }
 }
 #else
@@ -433,23 +452,57 @@ void __tdaw_tdc(TDAW_PASSDATA* p) {
   u_int64_t fpbRes = 0;  // keeps track of how big the current buffer is before
   // it is sent to ALSA
   while (1) {
-    if (p->songd < p->pip->fpb) {
-      fpbRes = p->pip->fpb;
+    if (p->songd < p->fpb) {
+      fpbRes = p->fpb;
     } else {
-      fpbRes = p->pip->fpb * ((p->songd / p->pip->fpb) + 1);
+      fpbRes = p->fpb * ((p->songd / p->fpb) + 1);
     }
     for (p->songd = p->songd; p->songd <= fpbRes; p->songd++) {
       TDAW_CHANNEL out = p->ptr((float)p->songd / p->samplerate, p->samplerate);
-      snd_pcm_writei(p->pip->handle, &out, 1.);
+      snd_pcm_writei(p->handle, &out, 1.);
 #ifdef TDAW_DEBUGIMGUI
       p->values[abs((int)(p->songd - fpbRes))] = out.left;
 #endif
-      while (snd_pcm_state(p->pip->handle) == SND_PCM_STATE_RUNNING){
-		if (snd_pcm_avail_update(p->pip->handle) > 0){ break;}
-      snd_pcm_wait(p->pip->handle, 10000);
+      while (snd_pcm_state(p->handle) == SND_PCM_STATE_RUNNING){
+		if (snd_pcm_avail_update(p->handle) > 0){ break;}
+      snd_pcm_wait(p->handle, 10000);
       }
     }
   }
+}
+#endif
+#endif
+
+#ifndef TDAW_MULTITHREAD
+
+void TDAW_render(TDAW_PIP* p, TDAW_CHANNEL(*ptr)
+#ifdef TDAW_USERDATA
+  (void* userData, float time, float samp), void* userData
+#else
+  (float time, float samp)
+#endif
+){
+    if (p->songd < p->fpb) {
+      p->fpbRes = p->fpb;
+    } else {
+      p->fpbRes = p->fpb * ((p->songd / p->fpb) + 1);
+    }
+    for (p->songd = p->songd; p->songd <= p->fpbRes; p->songd++) {
+      #ifdef TDAW_USERDATA
+      TDAW_CHANNEL out = ptr(userData, (float)p->songd / p->samplerate, p->samplerate);
+      #else
+      TDAW_CHANNEL out = ptr((float)p->songd / p->samplerate, p->samplerate);
+      #endif
+      p->songtime = (float)p->songd / p->samplerate;
+      snd_pcm_writei(p->handle, &out, 1.);
+#ifdef TDAW_DEBUGIMGUI
+      p->values[abs((int)(p->songd - p->fpbRes))] = out.left;
+#endif
+      while (snd_pcm_state(p->handle) == SND_PCM_STATE_RUNNING){
+		if (snd_pcm_avail_update(p->handle) > 0){ break;}
+        snd_pcm_wait(p->handle, 10000);
+      }
+    }
 }
 #endif
 
@@ -469,12 +522,12 @@ void TDAW_prerender(TDAW_PIP* tdp, TDAW_PASSDATA* data) {
   data->prerender =(TDAW_CHANNEL*)malloc(data->prerender_size * sizeof(TDAW_CHANNEL));
   data->pip = tdp;
 
-  for (data->songd = 0; data->songd < data->prerender_size; data->songd++) {
+  for (data->pip->songd = 0; data->pip->songd < data->prerender_size; data->pip->songd++) {
 
 #ifdef TDAW_USERDATA
     data->prerender[data->songd] = data->ptr((float)data->songd / tdp->samplerate, tdp->samplerate, data->userData);
 #else
-    data->prerender[data->songd] = data->ptr((float)data->songd / (int)tdp->samplerate, data->samplerate);
+    data->prerender[data->pip->songd] = data->ptr((float)data->pip->songd / (int)tdp->samplerate, data->samplerate);
 #endif
 
   }
@@ -484,6 +537,7 @@ void TDAW_prerender(TDAW_PIP* tdp, TDAW_PASSDATA* data) {
 #endif
 }
 
+#ifdef TDAW_MULTITHREAD
 //* Plays a prerendered buffer in TDAW_PASSDATA
 void TDAW_playPrerender(TDAW_PASSDATA* data) {
   pthread_create(&data->pip->thread, NULL, (void*)&__tdaw_tdc, data);
@@ -492,9 +546,24 @@ void TDAW_playPrerender(TDAW_PASSDATA* data) {
   fflush(NULL);
 #endif
 }
+#else
+//* Plays a prerendered buffer in TDAW_PASSDATA (per frame!)
+void TDAW_playPrerender(TDAW_PASSDATA *p) {
+  for (p->pip->songd = 0; p->pip->songd < p->prerender_size; p->pip->songd++) {
+    snd_pcm_writei(p->pip->handle, &p->prerender[p->pip->songd], 1.);
+    while (snd_pcm_state(p->pip->handle) == SND_PCM_STATE_RUNNING){
+		if (snd_pcm_avail_update(p->pip->handle) > 0){ break;}
+      snd_pcm_wait(p->pip->handle, 10000);
+    }
+  }
+}
+#endif
+
+
 #endif
 
 #ifndef TDAW_PRERENDER
+#ifdef TDAW_MULTITHREAD
 //* Opens a stream
 void TDAW_openStream(TDAW_PIP* pip, TDAW_PASSDATA* passdata) {
 #ifdef TDAW_DEBUGTEXT
@@ -508,7 +577,9 @@ void TDAW_openStream(TDAW_PIP* pip, TDAW_PASSDATA* passdata) {
 #endif
   passdata->pip = pip;
   passdata->samplerate = pip->samplerate;
+#ifndef TDAW_MULTITHREAD
   passdata->songd = 0;
+#endif
 #ifdef TDAW_DEBUGIMGUI
   data->fpb = tdp->fpb;
 #endif
@@ -524,6 +595,8 @@ void TDAW_openStream(TDAW_PIP* pip, TDAW_PASSDATA* passdata) {
 #endif
 }
 #endif
+
+
 void TDAW_closeStream(TDAW_PIP* pip) {
 #ifdef TDAW_DEBUGTEXT
   printf("TDAW-DEBUG: Close stream called with %p as pip\n", (void*)pip);
@@ -536,6 +609,7 @@ void TDAW_closeStream(TDAW_PIP* pip) {
   fflush(NULL);
 #endif
 }
+#endif
 
 void TDAW_terminate(TDAW_PIP* pip) {
 #ifdef TDAW_DEBUGTEXT
@@ -544,8 +618,8 @@ void TDAW_terminate(TDAW_PIP* pip) {
 #endif
   snd_pcm_close(pip->handle);
 }
-
 #endif
+
 
 #endif
 
