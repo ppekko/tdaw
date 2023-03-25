@@ -1,3 +1,4 @@
+#pragma once
 //
 //   ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 //   █▄▄ ▄▄█ ▄▄▀█ ▄▄▀█ ███ █      Tiny C Header-only cross-platform
@@ -62,6 +63,10 @@
 //#define TDAW_BACKEND_ALSA
 //#define TDAW_IMPLEMENTATION
 //#define TDAW_PRERENDER 10
+#pragma once
+
+#pragma once
+
 #ifdef TDAW_IMPLEMENTATION
 // -----------------------
 //      includes
@@ -439,6 +444,10 @@ void __tdaw_tdc(TDAW_PASSDATA* p) {
 #ifdef TDAW_DEBUGIMGUI
       p->values[abs((int)(p->songd - fpbRes))] = out.left;
 #endif
+      while (snd_pcm_state(p->pip->handle) == SND_PCM_STATE_RUNNING){
+		if (snd_pcm_avail_update(p->pip->handle) > 0){ break;}
+      snd_pcm_wait(p->pip->handle, 10000);
+      }
     }
   }
 }
