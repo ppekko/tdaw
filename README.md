@@ -1,4 +1,9 @@
-![banner](./brand/banner.png "banner")
+
+
+
+# PLEASE READ ME
+
+I have written a much more optimised version of the ALSA backend, which properly utilises multithreading and implements a circular buffer. Due to exams, I haven't found the time to implement inside of TDAW. I should be finished around July/August, so peek around then.
 
 # TDAW
 
@@ -8,9 +13,6 @@ This header enables you to do shader-like sound programming (similar to that of 
 
 Currently the sine wave demo on Linux compiles to 1.6kb (Arch Linux, 1166 bytes, demo/linux compiled with gcc and packed with vondehi).
 
-<p align="center">
-<img src="./brand/icon.png" alt="drawing" width="200" height="200"/>
-</p>
 
 # Usage
 

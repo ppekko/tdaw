@@ -5,8 +5,8 @@
 //   ███ ███ ██ █ ▀▀ █ █ █ █      PortAudio wrapper, Sound and notation
 //   management, ███ ███ ▀▀ █ ██ █▄▀▄▀▄█      tailored for the demoscene.
 //   ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-//          (Tiny-DAW)                              By kbx
-//          (github.com/kb-x/tdaw)
+//          (Tiny-DAW)                              By pipe
+//          (github.com/ppekko/tdaw)
 //
 //
 //              Licensing is located at the bottom of this header and in the
@@ -626,7 +626,7 @@ void TDAW_terminate(TDAW_PIP* pip) {
 //
 // >The MIT License (MIT)
 //
-// >Copyright (c) 2022 kbx
+// >Copyright (c) 2022 pipe
 //
 // >Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
