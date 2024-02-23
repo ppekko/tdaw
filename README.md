@@ -68,7 +68,6 @@ Same as live rendering, except instead of running `TDAW_render()` in a loop, you
 - For the demo, NASM and Python for vondehi and [Elfkickers for sstrip](https://www.muppetlabs.com/~breadbox/software/tiny/teensy.html)
 
 # QNA
-Sure, here is the text organized into a dropdown with blockquotes:
 
 <details>
 <summary>Why are there so many preprocessor definitions in `TDAW.h`, it's painful to read!! I hate you!!</summary>
