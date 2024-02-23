@@ -1,632 +1,507 @@
 #pragma once
 //
 //   ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-//   █▄▄ ▄▄█ ▄▄▀█ ▄▄▀█ ███ █      Tiny C Header-only cross-platform
-//   ███ ███ ██ █ ▀▀ █ █ █ █      PortAudio wrapper, Sound and notation
-//   management, ███ ███ ▀▀ █ ██ █▄▀▄▀▄█      tailored for the demoscene.
+//   █▄▄ ▄▄█ ▄▄▀█ ▄▄▀█ ███ █      tiny C header-only cross-platform (linux centered)
+//   ███ ███ ██ █ ▀▀ █ █ █ █      audio playback library
+//   ███ ███ ▀▀ █ ██ █▄▀▄▀▄█      tailored for the demoscene.                by pipe
 //   ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-//          (Tiny-DAW)                              By pipe
-//          (github.com/ppekko/tdaw)
+//  ┌────────────────────────────────┬──────────────────────┐
+//  │ source repository at           │ my github page       │
+//  │ github.com/ppekko/tdaw         │ github.com/ppekko    │
+//  └────────────────────────────────┴──────────────────────┘
 //
+//              licensing is located at the bottom of this header and in the
+//              github repository.
 //
-//              Licensing is located at the bottom of this header and in the
-//              github repo
-//
-//
-//              Insert the line
+//              insert the line
 //                  #define TDAW_IMPLEMENTATION
 //              before including this header in *one* C/C++ file to create the
 //              implementation.
 //
-//              Insert the line
+//              insert the line
+//                  #define TDAW_USERDATA
+//              before including this header in *one* C/C++ file to create the
+//              implementation.
+//
+//              insert the line
 //                  #define TDAW_BACKEND_PORTAUDIO
 //              before including this header in *one* C/C++ file to use
-//              PortAudio as a backend
+//              PortAudio as a backend (better for compatibility with other platforms)
 //
-//              Insert the line
+//              insert the line
 //                  #define TDAW_BACKEND_ALSA
 //              before including this header in *one* C/C++ file to use ALSA as
-//              a backend
+//              a backend (better for performance on linux)
 //
-//              Insert the line
-//                  #define TDAW_USERDATA
-//              before including this header in *one* C/C++ file to pass
-//              userdata to your stream.
+//              insert the line
+//                  #define TDAW_BACKEND_APLAY
+//              before including this header in *one* C/C++ file to use ALSA as
+//              a backend (better for size and (possibly) performance on linux)
 //
-//              Insert the line
-//                  #define TDAW_PESYNTH
-//              before including this header in *one* C/C++ file to get exmaple
-//              synthesisers.
-//
-//              Insert the line
+//              insert the line
 //                  #define TDAW_DEBUGTEXT
 //              before including this header in *one* C/C++ file to print debug
-//              text to console.
+//              text to console. 
 //
-//              Insert the line
-//                  #define TDAW_DEBUGIMGUI
-//              before including this header in *one* C++ file to create ImGui
-//              windows for debugging.
-//
-//              Insert the line
-//                  #define TDAW_UTILS
-//              before including this header in *one* C/C++ file to access to
-//              some utility functions.
-//
-//              Insert the line
-//                  #define TDAW_PRERENDER [length in seconds]
-//              before including this header in *one* C/C++ file to prerender a
-//              song instead of generating it on the fly.
-//              This feature is only available with TDAW_BACKEND_ALSA
-//
-//              Insert the line
+//              insert the line
 //                  #define TDAW_MULTITHREAD
-//              before including this header in *one* C/C++ file to enable multithreaded playback. ALSA only
+//              before including this header in *one* C/C++ file to enable multithreaded
+//              playback.
 //
-
-
-//#define TDAW_BACKEND_ALSA
-//#define TDAW_IMPLEMENTATION
-//#define TDAW_PRERENDER 10
-#pragma once
 
 #ifdef TDAW_IMPLEMENTATION
-// -----------------------
-//      includes
-// -----------------------
-
 #include <stdint.h>
 #include <stdlib.h>
-#include <unistd.h>
 
-#ifdef TDAW_BACKEND_PORTAUDIO 
-#include "portaudio.h"
-#endif
-
-#ifdef TDAW_BACKEND_ALSA 
-#include <alsa/asoundlib.h>
+#ifdef TDAW_MULTITHREAD
 #include <pthread.h>
 #endif
 
-#ifdef TDAW_DEBUGIMGUI 
-#include "imgui.h"
-#include <math.h>
-#endif
-
-#ifdef TDAW_PESYNTH 
-#include <math.h>
-#define TDAW_UTILS
-#endif
-
-// -----------------------
-//      containers
-// -----------------------
-
-//* An audio channel
 typedef struct {
-  float left;
-  float right;
+        float left;
+        float right;
 } TDAW_CHANNEL;
 
-#ifdef TDAW_BACKEND_PORTAUDIO
-//* A TDAW Instance
-typedef struct {
-  uint samplerate;
-  uint fpb;
-  PaStream* stream;
-#ifdef TDAW_PRERENDER
-  TDAW_CHANNEL* prerender;
-  uint prerender_size;
-#endif
-} TDAW_PIP;
-
-//* Data to be passed through to PortAudio
-typedef struct {
-  TDAW_CHANNEL(*ptr)
-#ifdef TDAW_USERDATA
-  (void* userData, float time, float samp);
-#else
-  (float time, float samp);
-#endif
-  float samplerate;
-#ifdef TDAW_USERDATA
-  void* userData;
-#endif
-  uint songd;
-#ifdef TDAW_DEBUGIMGUI
-  uint fpb;
-  float values[2048];
-#endif
-} TDAW_PASSDATA;
-#endif
-
 #ifdef TDAW_BACKEND_ALSA
-//* A TDAW Instance
+#include <alsa/asoundlib.h>
 typedef struct {
-  uint samplerate;
-  uint fpb;
-  snd_pcm_t* handle;
-  pthread_t thread;
-#ifndef TDAW_MULTITHREAD
-  uint fpbRes;
-  float songtime;
-#endif
-  uint songd;  // current buffer position
+        snd_pcm_t *pcm_handle;
+        snd_pcm_hw_params_t *hw_params;
+        uint16_t sample_rate;
+        uint16_t bufsz;
+        float *buffer;
+        float songtime;
+        uint64_t samples_played;
+        pthread_t thread;
 } TDAW_PIP;
 
-//* Data to be passed through to ALSA
+#ifdef TDAW_MULTITHREAD
+typedef struct {
+        TDAW_PIP *pip;
+#ifdef TDAW_USERDATA
+        void* userdata;
+#endif
+        TDAW_CHANNEL (*render_func)(float, float
+#ifdef TDAW_USERDATA
+        ,void*);
+#else
+        );
+#endif
+
+} TDAW_RDA;
+#endif
+
+int TDAW_initTDAW(TDAW_PIP *pip, uint16_t bufsz)
+{
+#ifdef TDAW_DEBUGTEXT
+        printf("tdaw: initializing...\n");
+#endif
+        pip->bufsz = bufsz;
+        pip->buffer = (float *)malloc(pip->bufsz * 2 * sizeof(float));
+        int rc;
+        rc = snd_pcm_open(&pip->pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
+#ifdef TDAW_DEBUGTEXT
+        if(rc < 0) {
+                printf("tdaw: unable to open PCM device: %s\n", snd_strerror(rc));
+                return -1;
+        }
+#endif
+        snd_pcm_hw_params_alloca(&pip->hw_params);
+        snd_pcm_hw_params_any(pip->pcm_handle, pip->hw_params);
+        snd_pcm_hw_params_set_access(pip->pcm_handle, pip->hw_params,
+                                SND_PCM_ACCESS_RW_INTERLEAVED);
+        snd_pcm_hw_params_set_format(pip->pcm_handle, pip->hw_params,
+                                SND_PCM_FORMAT_FLOAT_LE);
+        snd_pcm_hw_params_set_rate(pip->pcm_handle, pip->hw_params, 44100, 0);
+        snd_pcm_hw_params_set_channels(pip->pcm_handle, pip->hw_params, 2);
+        snd_pcm_hw_params_set_buffer_size(pip->pcm_handle, pip->hw_params,
+                                        pip->bufsz);
+        snd_pcm_hw_params_set_period_size(pip->pcm_handle, pip->hw_params,
+                                        pip->bufsz, 0);
+        rc = snd_pcm_hw_params(pip->pcm_handle, pip->hw_params);
+#ifdef TDAW_DEBUGTEXT
+        if(rc < 0) {
+                printf("tdaw: unable to set hardware parameters: %s\n", snd_strerror(rc));
+                return -1;
+        }
+#endif
+        pip->sample_rate = 44100;
+        pip->songtime = 0.0;
+        pip->samples_played = 0;
+#ifdef TDAW_DEBUGTEXT
+        printf("tdaw: done\n");
+#endif
+        return 0;
+}
+
+#ifdef TDAW_USERDATA
+void TDAW_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float, void*),
+                                                                void* user_data)
+#else
+void TDAW_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float))
+#endif
+{
+        float sample_rate = (float)pip->sample_rate;
+        uint64_t frames_left = pip->bufsz;
+        while(frames_left > 0) {
+#ifdef TDAW_USERDATA
+                TDAW_CHANNEL channel = render_func(pip->songtime, sample_rate, user_data);
+#else
+                TDAW_CHANNEL channel = render_func(pip->songtime, sample_rate);
+#endif
+                pip->buffer[(pip->bufsz - frames_left) * 2] = channel.left;
+                pip->buffer[(pip->bufsz - frames_left) * 2 + 1] = channel.right;
+                pip->songtime += 1.0 / sample_rate;
+                frames_left--;
+        }
+        uint64_t frames_written =
+        snd_pcm_writei(pip->pcm_handle, pip->buffer, pip->bufsz);
+        if(frames_written == -EPIPE) {
+                snd_pcm_prepare(pip->pcm_handle);
+        }
+#ifdef TDAW_DEBUGTEXT
+        else if(frames_written < 0) {
+                printf("tdaw: error writing to PCM device: %s\n",
+                       snd_strerror(frames_written));
+        } else if(frames_written < pip->bufsz) {
+                printf("tdaw: short write (expected %d, wrote %d)\n", pip->bufsz, 
+                                                                      frames_written);
+        }
+#endif
+
+        uint64_t frames_avail = snd_pcm_avail_update(pip->pcm_handle);
+        if(frames_avail < 0) {
+#ifdef TDAW_DEBUGTEXT
+                printf("tdaw: error getting available frames: %s\n", 
+                snd_strerror(frames_avail));
+#endif
+                snd_pcm_prepare(pip->pcm_handle);
+        }
+
+        pip->samples_played = frames_avail;
+}
+
+void TDAW_terminate(TDAW_PIP *pip)
+{
+#ifdef TDAW_DEBUGTEXT
+        printf("tdaw: shutting down...\n");
+#endif
+#ifdef TDAW_MULTITHREAD
+        if(pip->thread) {
+                pthread_cancel(pip->thread);
+        }
+#endif
+        snd_pcm_drain(pip->pcm_handle);
+        snd_pcm_close(pip->pcm_handle);
+}
+
+#ifdef TDAW_MULTITHREAD
+void *_TDAW_render_loop(void *arg)
+{
+        TDAW_RDA *render_args = (TDAW_RDA *)arg;
+        while(1) {
+#ifdef TDAW_USERDATA
+                TDAW_render(render_args->pip, render_args->render_func,
+                            render_args->userdata);
+#else
+                TDAW_render(render_args->pip, render_args->render_func);
+#endif
+        }
+        pthread_exit(NULL);
+}
+
+#ifdef TDAW_USERDATA
+void TDAW_mt_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float, void*),
+                    void* user_data)
+#else
+void TDAW_mt_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float))
+#endif
+{
+        TDAW_RDA *render_args = (TDAW_RDA *)malloc(sizeof(TDAW_RDA));
+        render_args->pip = pip;
+        render_args->render_func = render_func;
+#ifdef TDAW_USERDATA
+        render_args->userdata = user_data;
+#endif
+        pthread_create(&pip->thread, NULL, _TDAW_render_loop, (void *)render_args);
+}
+#endif // end multithread
+#endif // end alsa backend
+
+#ifdef TDAW_BACKEND_PORTAUDIO
+#include <portaudio.h>
 
 typedef struct {
+        PaStream *stream;
+        uint16_t sample_rate;
+        uint16_t bufsz;
+        float *buffer;
+        float songtime;
+        uint64_t samples_played;
+        pthread_t thread;
+} TDAW_PIP;
+
+#ifdef TDAW_MULTITHREAD
+typedef struct {
+        TDAW_PIP *pip;
 #ifdef TDAW_USERDATA
-  TDAW_CHANNEL(*ptr)
-  (void* userData, float time, float samp);
-#else
-  TDAW_CHANNEL(*ptr)
-  (float time, float samp);
+        void* userdata;
 #endif
+        TDAW_CHANNEL (*render_func)(float, float
 #ifdef TDAW_USERDATA
-  void* userData;
-#endif
-#ifdef TDAW_DEBUGIMGUI
-  uint fpb;
-  float values[2048];
-#endif
-#ifdef TDAW_PRERENDER
-  TDAW_CHANNEL* prerender;
-  uint prerender_size;
-#endif
-
-  TDAW_PIP* pip;        // pointer to TDAW_PIP
-  float samplerate;
-} TDAW_PASSDATA;
-#endif
-
-// -------------------------
-//     util functions
-// -------------------------
-
-#ifdef TDAW_UTILS
-//* Custs off TDAW_CHANNEL at a given peak.
-void TDAW_hardLimiter(TDAW_CHANNEL* channel, float peak) {
-  if (channel->left > peak) {
-    channel->left = peak;
-  }
-  if (channel->right > peak) {
-    channel->right = peak;
-  }
-  if (channel->left < -peak) {
-    channel->left = -peak;
-  }
-  if (channel->right < -peak) {
-    channel->right = -peak;
-  }
-}
-
-//* Adds 2 channels together
-void TDAW_addSelf(TDAW_CHANNEL* channel, TDAW_CHANNEL channel2) {
-  channel->left += channel2.left;
-  channel->right += channel2.right;
-}
-
-//* Places input in both channels
-TDAW_CHANNEL TDAW_monoFloat(float i) {
-#ifdef __cplusplus  // avoids warning from C++ which forbids compound literals.
-  TDAW_CHANNEL o = {i, i};
-  return o;
+        ,void*);
 #else
-  return (TDAW_CHANNEL){i, i};
-#endif
-}
-//* Adjust volume for any TDAW_CHANNEL
-void TDAW_adjustVol(TDAW_CHANNEL* d, float i) {
-  d->left *= i;
-  d->right *= i;
-}
-
+        );
 #endif
 
-// --------------------------
-//           synths
-// --------------------------
-
-#ifdef TDAW_PESYNTH
-
-//* Sine wave synth
-TDAW_CHANNEL TDAW_SYNTH_sine(float time, float freq) {
-  return TDAW_monoFloat(sin(6.28318530718 * freq * time) * 0.1);
-}
-
-//* Plucked sine wave synth
-TDAW_CHANNEL TDAW_SYNTH_sinePluck(float time, float freq, float decay,
-                                  int vol) {
-  return TDAW_monoFloat((sin(6.28318530718 * freq * time) * exp(decay * time)) *
-                        (vol * 0.1));
-}
-
+} TDAW_RDA;
 #endif
 
-// -------------------------
-//   imgui debug functions
-// -------------------------
-
-#ifdef TDAW_DEBUGIMGUI
-
-//* Plot graph for ImGui with sliders for scale
-void TDAW_imguiPlot(TDAW_PASSDATA* data) {
-  static bool animate = true;
-  static int values_offset = 0;
-  static float br = 0.5;
-  static double refresh_time = 0.0;
-  if (!animate || refresh_time == 0.0) refresh_time = ImGui::GetTime();
-  while (refresh_time <
-         ImGui::GetTime())  // Create data at fixed 60 Hz rate for the demo
-  {
-    static float phase = 0.0 f;
-    data->values[values_offset] = cosf(phase);
-    values_offset = (values_offset + 1) % 2048;
-    phase += 0.10 f * values_offset;
-    refresh_time += 1.0 f / 60.0 f;
-  }
-  ImGui::SliderFloat("waveform vis scale y ", &br, 1.0 f, 0.1 f, "scale: %.3f");
-  ImGui::PlotLines("Calculated\nWaveform\nData", data->values, data->fpb,
-                   values_offset, "left channel", -br, br, ImVec2(0, 80.0 f));
-}
-#endif
-
-// -------------------------
-//     general functions
-// -------------------------
-
-#ifdef TDAW_BACKEND_PORTAUDIO  //! PORTAUDIO BACKEND
-//* Create a TDAW Instance
-TDAW_PIP TDAW_initTDAW(uint samplerate, uint fpb) {
+int TDAW_initTDAW(TDAW_PIP *pip, uint16_t bufsz)
+{
 #ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: Init called with %i as samplerate and %i as buffersize\n",
-         (int)samplerate, (int)fpb);
-  fflush(NULL);
+        printf("tdaw: initializing...\n");
 #endif
-  TDAW_PIP base;
-  base.fpb = fpb;
-  base.samplerate = samplerate;
-  Pa_Initialize();
+        pip->bufsz = bufsz;
+        pip->buffer = (float *)malloc(pip->bufsz * 2 * sizeof(float));
+        int rc;
+        rc = Pa_Initialize();
 #ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: TDAW Initiated\n");
-  fflush(NULL);
+        if(rc != paNoError) {
+                printf("tdaw: unable to initialize PortAudio: %s\n", Pa_GetErrorText(rc));
+                return -1;
+        }
 #endif
-  return base;
+        rc = Pa_OpenDefaultStream(&pip->stream, 0, 2, paFloat32, 44100, pip->bufsz, 
+                                                                        NULL, NULL);
+#ifdef TDAW_DEBUGTEXT
+        if(rc != paNoError) {
+                printf("tdaw: unable to open default stream: %s\n", Pa_GetErrorText(rc));
+                return -1;
+        }
+#endif
+        rc = Pa_StartStream(pip->stream);
+#ifdef TDAW_DEBUGTEXT
+        if(rc != paNoError) {
+                printf("tdaw: unable to start stream: %s\n", Pa_GetErrorText(rc));
+                return -1;
+        }
+#endif
+        pip->sample_rate = 44100;
+        pip->songtime = 0.0;
+        pip->samples_played = 0;
+#ifdef TDAW_DEBUGTEXT
+        printf("tdaw: done\n");
+#endif
+        return 0;
 }
 
-//* Callback for PortAudio
-static int __tdaw_tdc(const void* inputBuffer, void* outputBuffer,
-                      unsigned long framesPerBuffer,
-                      const PaStreamCallbackTimeInfo* timeInfo,
-                      PaStreamCallbackFlags statusFlags, void* userData) {
-  TDAW_PASSDATA* data = (TDAW_PASSDATA*)userData;
-  float* out = (float*)outputBuffer;
-  (void)timeInfo;
-  (void)statusFlags;
-  (void)inputBuffer;
-  static uint fpbRes;  // keeps track of how big the current buffer is
-  // before it is sent to ALSA
-  if (data->songd < framesPerBuffer) {
-    fpbRes = framesPerBuffer;
-  } else {
-    fpbRes = framesPerBuffer * ((data->songd / framesPerBuffer) + 1);
-  }
-
-  for (data->songd = data->songd; data->songd <= fpbRes; data->songd++) {
 #ifdef TDAW_USERDATA
-    TDAW_CHANNEL oub = data->ptr(
-        data->userData, (data->songd / data->samplerate), data->samplerate);
+void TDAW_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float, void*),
+                                                                void* user_data)
 #else
-    TDAW_CHANNEL oub =
-        data->ptr((data->songd / data->samplerate), data->samplerate);
+void TDAW_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float))
 #endif
-    *out++ = oub.left;
-    *out++ = oub.right;
-#ifdef TDAW_DEBUGIMGUI
-    data->values[abs((int)(data->songd - fpbRes))] = oub.left;
-#endif
-  }
-  return paContinue;
-}
-
-//* Opens a stream
-void TDAW_openStream(TDAW_PIP* tdp, TDAW_PASSDATA* data) {
-#ifdef TDAW_DEBUGTEXT
+{
+        float sample_rate = (float)pip->sample_rate;
+        uint64_t frames_left = pip->bufsz;
+        while(frames_left > 0) {
 #ifdef TDAW_USERDATA
-  printf(
-      "TDAW-DEBUG: Open Stream called with %p as callback function and %p "
-      "as user data\n",
-      (void*)&data->ptr, (void*)&data->userData);
-  fflush(NULL);
+                TDAW_CHANNEL channel = render_func(pip->songtime, sample_rate, user_data);
 #else
-  printf("TDAW-DEBUG: Open Stream called with %p as callback function\n",
-         (void*)&data->ptr);
-  fflush(NULL);
+                TDAW_CHANNEL channel = render_func(pip->songtime, sample_rate);
 #endif
-#endif
-  data->songd = 0;
-  data->samplerate = tdp->samplerate;
-#ifdef TDAW_DEBUGIMGUI
-  data->fpb = tdp->fpb;
+                pip->buffer[(pip->bufsz - frames_left) * 2] = channel.left;
+                pip->buffer[(pip->bufsz - frames_left) * 2 + 1] = channel.right;
+                pip->songtime += 1.0 / sample_rate;
+                frames_left--;
+        }
+        uint64_t frames_written =
+        Pa_WriteStream(pip->stream, pip->buffer, pip->bufsz);
+#ifdef TDAW_DEBUGTEXT
+        if(frames_written < 0) {
+                printf("tdaw: error writing to stream: %s\n",
+                           Pa_GetErrorText(frames_written));
+        }else if(frames_written < pip->bufsz) {
+                printf("tdaw: short write (expected %d, wrote %d)\n", pip->bufsz,
+                                                                      frames_written);
+        }
 #endif
 
-  PaStreamParameters outputParameters;
-  outputParameters.device = Pa_GetDefaultOutputDevice();
-  outputParameters.channelCount = 2;
-  outputParameters.hostApiSpecificStreamInfo = NULL;
-  outputParameters.sampleFormat = paFloat32;
-  Pa_OpenStream(&tdp->stream, NULL, &outputParameters, (float)tdp->samplerate,
-                tdp->fpb, paClipOff, __tdaw_tdc, data);
-#ifdef TDAW_DEBUGTEXT
-#ifdef TDAW_USERDATA
-  printf("TDAW-DEBUG: Stream with callback and userdata as %p and %p opened\n",
-         (void*)&data->ptr, (void*)&data->userData);
-  fflush(NULL);
-#else
-  printf("TDAW-DEBUG: Stream with callback as %p opened\n", (void*)&data->ptr);
-  fflush(NULL);
-#endif
-#endif
-  Pa_StartStream(tdp->stream);
-#ifdef TDAW_DEBUGTEXT
-#ifdef TDAW_USERDATA
-  printf("TDAW-DEBUG: Stream with callback and userdata as %p and %p started\n",
-         (void*)&data->ptr, (void*)&data->userData);
-  fflush(NULL);
-#else
-  printf("TDAW-DEBUG: Stream with callback and userdata as %p started\n",
-         (void*)&data->ptr);
-  fflush(NULL);
-#endif
-#endif
+        pip->samples_played += frames_written;
 }
 
-//* Closes a stream
-void TDAW_closeStream(TDAW_PIP* tdp) {
+void TDAW_terminate(TDAW_PIP *pip) {
 #ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: Close stream called with %p as pip\n", (void*)tdp);
-  fflush(NULL);
+        printf("tdaw: shutting down...\n");
 #endif
-  Pa_StopStream(tdp->stream);
-  Pa_CloseStream(tdp->stream);
-#ifdef TDAW_DEBUGIMGUI
-  printf("TDAW-DEBUG: Stream with %p as pip closed\n", (void*)tdp);
-  fflush(NULL);
+#ifdef TDAW_MULTITHREAD
+        if(pip->thread) {
+                pthread_cancel(pip->thread);
+        }
 #endif
-}
-
-//* Terminates TDAW
-void TDAW_terminate() {
-#ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: TDAW terminated.\n");
-  fflush(NULL);
-#endif
-  Pa_Terminate();
-}
-#endif
-
-#ifdef TDAW_BACKEND_ALSA  //! ALSA BACKEND
-
-//* Create a TDAW Instance
-TDAW_PIP TDAW_initTDAW(uint samplerate, uint fpb) {
-#ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: Init called with %i as samplerate and %i as buffersize\n",
-         (int)samplerate, (int)fpb);
-  fflush(NULL);
-#endif
-  TDAW_PIP tda;
-  tda.samplerate = samplerate;
-  tda.fpb = fpb;
-  tda.songd = 0;
-  snd_pcm_open(&tda.handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
-
-#ifndef TDAW_MULTITHREAD
-  tda.fpbRes = 0;
-  tda.songtime = 0.f;
-#endif
-
-  snd_pcm_set_params(tda.handle, SND_PCM_FORMAT_FLOAT,SND_PCM_ACCESS_RW_INTERLEAVED, 2, tda.samplerate, 1, 500000);
-#ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: TDAW Initiated\n");
-  fflush(NULL);
-#endif
-  return tda;
+        Pa_StopStream(pip->stream);
+        Pa_CloseStream(pip->stream);
+        Pa_Terminate();
 }
 
 #ifdef TDAW_MULTITHREAD
-#ifdef TDAW_PRERENDER
-void __tdaw_tdc(TDAW_PASSDATA* p) {
-  for (p->pip->songd = 0; p->pip->songd < p->prerender_size; p->pip->songd++) {
-    snd_pcm_writei(p->pip->handle, &p->prerender[p->pip->songd], 1.);
-    while (snd_pcm_state(p->pip->handle) == SND_PCM_STATE_RUNNING){
-		if (snd_pcm_avail_update(p->pip->handle) > 0){ break;}
-      snd_pcm_wait(p->pip->handle, 10000);
-    }
-  }
-}
-#else
-//* Opens a stream
-void __tdaw_tdc(TDAW_PASSDATA* p) {
-  u_int64_t fpbRes = 0;  // keeps track of how big the current buffer is before
-  // it is sent to ALSA
-  while (1) {
-    if (p->songd < p->fpb) {
-      fpbRes = p->fpb;
-    } else {
-      fpbRes = p->fpb * ((p->songd / p->fpb) + 1);
-    }
-    for (p->songd = p->songd; p->songd <= fpbRes; p->songd++) {
-      TDAW_CHANNEL out = p->ptr((float)p->songd / p->samplerate, p->samplerate);
-      snd_pcm_writei(p->handle, &out, 1.);
-#ifdef TDAW_DEBUGIMGUI
-      p->values[abs((int)(p->songd - fpbRes))] = out.left;
-#endif
-      while (snd_pcm_state(p->handle) == SND_PCM_STATE_RUNNING){
-		if (snd_pcm_avail_update(p->handle) > 0){ break;}
-      snd_pcm_wait(p->handle, 10000);
-      }
-    }
-  }
-}
-#endif
-#endif
-
-#ifndef TDAW_MULTITHREAD
-
-void TDAW_render(TDAW_PIP* p, TDAW_CHANNEL(*ptr)
+void *_TDAW_render_loop(void *arg) {
+        TDAW_RDA *render_args = (TDAW_RDA *)arg;
+        while(1) {
 #ifdef TDAW_USERDATA
-  (void* userData, float time, float samp), void* userData
+                TDAW_render(render_args->pip, render_args->render_func,
+                                                render_args->userdata);
 #else
-  (float time, float samp)
+                TDAW_render(render_args->pip, render_args->render_func);
 #endif
-){
-    if (p->songd < p->fpb) {
-      p->fpbRes = p->fpb;
-    } else {
-      p->fpbRes = p->fpb * ((p->songd / p->fpb) + 1);
-    }
-    for (p->songd = p->songd; p->songd <= p->fpbRes; p->songd++) {
-      #ifdef TDAW_USERDATA
-      TDAW_CHANNEL out = ptr(userData, (float)p->songd / p->samplerate, p->samplerate);
-      #else
-      TDAW_CHANNEL out = ptr((float)p->songd / p->samplerate, p->samplerate);
-      #endif
-      p->songtime = (float)p->songd / p->samplerate;
-      snd_pcm_writei(p->handle, &out, 1.);
-#ifdef TDAW_DEBUGIMGUI
-      p->values[abs((int)(p->songd - p->fpbRes))] = out.left;
-#endif
-      while (snd_pcm_state(p->handle) == SND_PCM_STATE_RUNNING){
-		if (snd_pcm_avail_update(p->handle) > 0){ break;}
-        snd_pcm_wait(p->handle, 10000);
-      }
-    }
+        }
+        pthread_exit(NULL);
 }
+
+#ifdef TDAW_USERDATA
+void TDAW_mt_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float, void*),
+                                                                    void* user_data)
+#else
+void TDAW_mt_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float))
+#endif
+{
+        TDAW_RDA *render_args = (TDAW_RDA *)malloc(sizeof(TDAW_RDA));
+        render_args->pip = pip;
+        render_args->render_func = render_func;
+#ifdef TDAW_USERDATA
+        render_args->userdata = user_data;
+#endif
+        pthread_create(&pip->thread, NULL, _TDAW_render_loop, (void *)render_args);
+}
+#endif // end multithread
+#endif // end portaudio backend
+
+#ifdef TDAW_BACKEND_APLAY
+#include <stdio.h>
+typedef struct {
+        FILE *aplay_handle;
+        uint16_t sample_rate;
+        uint16_t bufsz;
+        float *buffer;
+        float songtime;
+        uint64_t samples_played;
+        pthread_t thread;
+} TDAW_PIP;
+
+#ifdef TDAW_MULTITHREAD
+typedef struct {
+        TDAW_PIP *pip;
+#ifdef TDAW_USERDATA
+        void* userdata;
+#endif
+        TDAW_CHANNEL (*render_func)(float, float
+#ifdef TDAW_USERDATA
+        ,void*);
+#else
+        );
 #endif
 
-#ifdef TDAW_PRERENDER
-//* Prerenders audio to a buffer
-void TDAW_prerender(TDAW_PIP* tdp, TDAW_PASSDATA* data) {
+} TDAW_RDA;
+#endif
+
+int TDAW_initTDAW(TDAW_PIP *pip, uint16_t bufsz)
+{
 #ifdef TDAW_DEBUGTEXT
-#ifdef TDAW_USERDATA
-  printf("TDAW-DEBUG: Prerender called with %p as callback function and %p as user data\n", (void*)&data->ptr, (void*)&data->userData);
-  fflush(NULL);
-#else
-  printf("TDAW-DEBUG: Prerender called with %p as callback function\n", (void*)&data->ptr);
-  fflush(NULL);
+        printf("tdaw: initializing...\n");
 #endif
-#endif
-  data->prerender_size = TDAW_PRERENDER * tdp->fpb * 45;
-  data->prerender =(TDAW_CHANNEL*)malloc(data->prerender_size * sizeof(TDAW_CHANNEL));
-  data->pip = tdp;
-
-  for (data->pip->songd = 0; data->pip->songd < data->prerender_size; data->pip->songd++) {
-
-#ifdef TDAW_USERDATA
-    data->prerender[data->songd] = data->ptr((float)data->songd / tdp->samplerate, tdp->samplerate, data->userData);
-#else
-    data->prerender[data->pip->songd] = data->ptr((float)data->pip->songd / (int)tdp->samplerate, data->samplerate);
-#endif
-
-  }
+        pip->bufsz = bufsz;
+        pip->buffer = (float *)malloc(pip->bufsz * 2 * sizeof(float));
+        pip->aplay_handle = popen("aplay -f FLOAT_LE -r 44100 -c 2", "w");
 #ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: Prerendered %i stereo frames\n", (int)data->prerender_size);
-  fflush(NULL);
+        if(!pip->aplay_handle) {
+                printf("tdaw: unable to open aplay\n");
+                return -1;
+        }
 #endif
+        pip->sample_rate = 44100;
+        pip->songtime = 0.0;
+        pip->samples_played = 0;
+#ifdef TDAW_DEBUGTEXT
+        printf("tdaw: done\n");
+#endif
+        return 0;
+}
+
+#ifdef TDAW_USERDATA
+void TDAW_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float, void*),
+                                                                void* user_data)
+#else
+void TDAW_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float))
+#endif
+{
+        float sample_rate = (float)pip->sample_rate;
+        uint64_t frames_left = pip->bufsz;
+        while(frames_left > 0) {
+#ifdef TDAW_USERDATA
+                TDAW_CHANNEL channel = render_func(pip->songtime, sample_rate, user_data);
+#else
+                TDAW_CHANNEL channel = render_func(pip->songtime, sample_rate);
+#endif
+                pip->buffer[(pip->bufsz - frames_left) * 2] = channel.left;
+                pip->buffer[(pip->bufsz - frames_left) * 2 + 1] = channel.right;
+                pip->songtime += 1.0 / sample_rate;
+                frames_left--;
+        }
+        fwrite(pip->buffer, sizeof(float), pip->bufsz * 2, pip->aplay_handle);
+}
+
+void TDAW_terminate(TDAW_PIP *pip) {
+#ifdef TDAW_DEBUGTEXT
+        printf("tdaw: shutting down...\n");
+#endif
+#ifdef TDAW_MULTITHREAD
+        if(pip->thread) {
+                pthread_cancel(pip->thread);
+        }
+#endif
+        pclose(pip->aplay_handle);
 }
 
 #ifdef TDAW_MULTITHREAD
-//* Plays a prerendered buffer in TDAW_PASSDATA
-void TDAW_playPrerender(TDAW_PASSDATA* data) {
-  pthread_create(&data->pip->thread, NULL, (void*)&__tdaw_tdc, data);
-#ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: Thread with %p as userdata started\n", (void*)&data->ptr);
-  fflush(NULL);
-#endif
-}
-#else
-//* Plays a prerendered buffer in TDAW_PASSDATA (per frame!)
-void TDAW_playPrerender(TDAW_PASSDATA *p) {
-  for (p->pip->songd = 0; p->pip->songd < p->prerender_size; p->pip->songd++) {
-    snd_pcm_writei(p->pip->handle, &p->prerender[p->pip->songd], 1.);
-    while (snd_pcm_state(p->pip->handle) == SND_PCM_STATE_RUNNING){
-		if (snd_pcm_avail_update(p->pip->handle) > 0){ break;}
-      snd_pcm_wait(p->pip->handle, 10000);
-    }
-  }
-}
-#endif
-
-
-#endif
-
-#ifndef TDAW_PRERENDER
-#ifdef TDAW_MULTITHREAD
-//* Opens a stream
-void TDAW_openStream(TDAW_PIP* pip, TDAW_PASSDATA* passdata) {
-#ifdef TDAW_DEBUGTEXT
+void *_TDAW_render_loop(void *arg) {
+        TDAW_RDA *render_args = (TDAW_RDA *)arg;
+        while(1) {
 #ifdef TDAW_USERDATA
-  printf("TDAW-DEBUG: Open Stream called with %p as callback function and %p as user data\n", (void*)&passdata->ptr, (void*)&passdata->userData);
-  fflush(NULL);
+                TDAW_render(render_args->pip, render_args->render_func,
+                                                render_args->userdata);
 #else
-  printf("TDAW-DEBUG: Open Stream called with %p as callback function\n", (void*)&passdata->ptr);
-  fflush(NULL);
+                TDAW_render(render_args->pip, render_args->render_func);
 #endif
-#endif
-  passdata->pip = pip;
-  passdata->samplerate = pip->samplerate;
-#ifndef TDAW_MULTITHREAD
-  passdata->songd = 0;
-#endif
-#ifdef TDAW_DEBUGIMGUI
-  data->fpb = tdp->fpb;
-#endif
-  pthread_create(&pip->thread, NULL, (void*)__tdaw_tdc, passdata);
-#ifdef TDAW_DEBUGTEXT
+        }
+        pthread_exit(NULL);
+}
+
 #ifdef TDAW_USERDATA
-  printf("TDAW-DEBUG: Stream with callback and userdata as %p and %p opened\n", (void*)&passdata->ptr, (void*)&passdata->userData);
-  fflush(NULL);
+void TDAW_mt_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float, void*),
+                                                                    void* user_data)
 #else
-  printf("TDAW-DEBUG: Stream with callback as %p opened\n", (void*)&passdata->ptr);
-  fflush(NULL);
+void TDAW_mt_render(TDAW_PIP *pip, TDAW_CHANNEL (*render_func)(float, float))
 #endif
+{
+        TDAW_RDA *render_args = (TDAW_RDA *)malloc(sizeof(TDAW_RDA));
+        render_args->pip = pip;
+        render_args->render_func = render_func;
+#ifdef TDAW_USERDATA
+        render_args->userdata = user_data;
 #endif
+        pthread_create(&pip->thread, NULL, _TDAW_render_loop, (void *)render_args);
 }
-#endif
+#endif // end multithread
+#endif // end aplay backend
 
+#endif // end 
 
-void TDAW_closeStream(TDAW_PIP* pip) {
-#ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: Close stream called with %p as pip\n", (void*)pip);
-  fflush(NULL);
-#endif
-  pthread_cancel(pip->thread);
-  snd_pcm_close(pip->handle);
-#ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: Stream with %p as pip closed\n", (void*)pip);
-  fflush(NULL);
-#endif
-}
-#endif
-
-void TDAW_terminate(TDAW_PIP* pip) {
-#ifdef TDAW_DEBUGTEXT
-  printf("TDAW-DEBUG: TDAW terminated.\n");
-  fflush(NULL);
-#endif
-  snd_pcm_close(pip->handle);
-}
-#endif
-
-
-#endif
 
 //
 // >The MIT License (MIT)
 //
-// >Copyright (c) 2022 pipe
+// >Copyright (c) 2024 pipe
 //
 // >Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal

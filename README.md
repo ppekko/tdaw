@@ -1,17 +1,12 @@
-
-
-
-# PLEASE READ ME
-
-I have written a much more optimised version of the ALSA backend, which properly utilises multithreading and implements a circular buffer. Due to exams, I haven't found the time to implement inside of TDAW. I should be finished around July/August, so peek around then.
-
 # TDAW
 
-A tiny, header only, easy to use, cross-platform, portaudio/alsa wrapper, tailored for the demo scene.
+A tiny, header only, easy to use, minimal overhead, cross-platform audio wrapper, tailored for the demo scene.
 
-This header enables you to do shader-like sound programming (similar to that of [ShaderToy](https://shadertoy.com "ShaderToy")) inside of C/C++ incredibly easy.
+This header enables you to do shader-like sound programming (similar to that of [ShaderToy](https://shadertoy.com "ShaderToy")) inside of C/C++ incredibly easily.
 
-Currently the sine wave demo on Linux compiles to 1.6kb (Arch Linux, 1166 bytes, demo/linux compiled with gcc and packed with vondehi).
+**Keep in mind that the demo projects sizes may vary on your machine, and additionally *if you incorporate them into your project, chances are it will be smaller due to compiler optimisations and better packing compression with larger files***
+
+<ins>For actual sizes, refer to the table inside the demo folder's readme.</ins>
 
 
 # Usage
@@ -21,106 +16,85 @@ Before including TDAW, you must first `#define TDAW_IMPLEMENTATION` in *one* C/C
 You then must select a backend, the following are:
 
 - PortAudio `#define TDAW_BACKEND_PORTAUDIO`
-- ALSA `#define TDAW_BACKEND_ALSA`
+- ALSA `#define TDAW_BACKEND_ALSA` (linux only)
+- aplay `#define TDAW_BACKEND_APLAY` (linux only)
 
-There are various features you can activate by defining the following lines:
+There are also features you can activate by defining the following lines:
 
 ```c
 #define TDAW_USERDATA // Allow user data to be passed to your stream
-#define TDAW_UTILS // Access to some utility functions.
-#define TDAW_PESYNTH // Access basic example synthesizers.
 #define TDAW_DEBUGTEXT // Output debug text to console
-#define TDAW_DEBUGIMGUI // Create ImGui Windows for debugging (C++ only)
-#define TDAW_PRERENDER [length in seconds] // Allows for functions to prerender your music/sounds to save lots of CPU (currently only works with the ALSA backend)
-#define TDAW_MULTITHREADING // Enables multithreaded playback. Causes slight performance decrease and no time variable to access. Single threading only avalible on alsa.
+#define TDAW_MULTITHREAD // Enables multithreaded playback
 ```
-
 These are also detailed in the header itself.
 
-**Note: Prerendering your audio could result in a massive performance increase if your computer struggles with playback.**
+## Creating a function to render
 
----
+Your function must follow this format. `TDAW_CHANNEL` is a struct with 2 floats for both audio channels.
+```c
+TDAW_CHANNEL test(float time, float samp)
+{
+  TDAW_CHANNEL out;
+  //code here
+  return out;
+}
+```
+If you have enabled `TDAW_USERDATA`, an extra `void* userdata` is required as an argument, allowing you to pass data in.
 
-# Prerendering/Live rendering on a single threads
+# Live rendering on a single threads
 
-Initialise TDAW and open a stream for the sound to begin playing ().
-Set a sample rate and a FPB. If your audio lags, try increasing the FPB:
+Initialise TDAW with a refernce to a TDAW_PIP and your "frames per buffer" size (FPB). If your audio lags, try increasing the FPB. Lower FPB results in faster output at the cost of potential missing buffers if your code fails to send out a buffer in time, and vice versa.
 
 ```c
-TDAW_PIP tdaw = TDAW_initTDAW(44100, 512); //sample rate, frames per buffer
+TDAW_PIP tdaw;
+TDAW_initTDAW(&tdaw, 1024);
 ```
 
-If you plan to prerender, place this outside of your game/application loop.
+Inside your application/demo loop, run the following
 
 ```c
-TDAW_PASSDATA dat;
-dat.ptr = &function;
-TDAW_prerender(&tdaw, &dat); //prerenders sounds
-```
-
-Inside your game/application loop, run the following if you are prerendering or live rendering
-
-```c
-TDAW_render(&tdaw, &function); //live rendering
-TDAW_playPrerender(&dat); //prender playback
+TDAW_render(&tdaw, &function);
 ```
 
 To terminate a TDAW instance run `TDAW_terminate()`.
 
-# Prerendering/Live rendering with multithreading
+# Live rendering with multithreading
 
-Create a `TDAW_PASSDATA` instance like so:
-
-```c
-TDAW_PASSDATA data;
-```
-
-From here you can put the pointer to your music code like so:
-
-```c
-data.ptr = &music;
-```
-
-Functions passed through `data.ptr` must return `TDAW_CHANNEL` (which is 2 floats making up the left and right audio channel).
-They must also take `float time` and `float samp` (`void* userData` too if you have `TDAW_USERDATA` defined!)
-
-And any userdata can be passed through `data.userData` (make sure `TDAW_USERDATA` is defined!)
-
-Next you must initialise TDAW and open a stream for the sound to begin playing ().
-Set a sample rate and a FPB. If your audio lags, try increasing the FPB:
-
-```c
-TDAW_PIP tdaw = TDAW_initTDAW(44100, 512); //sample rate, frames per buffer
-TDAW_openStream(&tdaw, &dat);
-```
-
-If you are planning to prerender your audio, TDAW_openStream() is not needed, instead do the following:
-
-```c
-TDAW_prerender(&tdaw, &dat); //prerenders sounds
-TDAW_playPrerender(&dat);    //plays sound
-```
-
-To close a stream, run `TDAW_closeStream()` and to terminate a TDAW instance run `TDAW_terminate()`.
-
----
-
-Take a look at the demo folder for a basic completed project containing a 'plucked' sine wave.
-
-The example folder contains some more projects.
-
-Documentation will come soon. 
+Same as live rendering, except instead of running `TDAW_render()` in a loop, you run `TDAW_mt_render()` **outside of the loop**, otherwise you will be constantly spawning new threads. It holds the same parameters as `TDAW_render()`
 
 # Dependencies
 
-- PortAudio or ALSA depending on what backend you want to use
-- NASM and Python for vondehi
+- PortAudio, ALSA or aplay depending on what backend you want to use
+- For the demo, NASM and Python for vondehi and [Elfkickers for sstrip](https://www.muppetlabs.com/~breadbox/software/tiny/teensy.html)
 
-# Future
+# QNA
+Sure, here is the text organized into a dropdown with blockquotes:
 
-- PortAudio prerendering support
-- A Windows build
+<details>
+<summary>Why are there so many preprocessor definitions in `TDAW.h`, it's painful to read!! I hate you!!</summary>
+
+> Packaging this all in one header file while trying to save on binary size will result at messy code at some point haha
+</details>
+
+<details>
+<summary>Can I pass a single float[2] into TDAW_CHANNEL without having to apply left and right channels separately?</summary>
+
+> Yes, just do the following pointer magic
+>
+> ```c
+> TDAW_CHANNEL out;
+> float (*ptr)[2] = (float (*)[2])&out;
+> float data[2] = {0.2, 0.2};
+> *ptr = &data;
+> ```
+</details>
+
+<details>
+<summary>What backend should I use?</summary>
+
+> Portaudio if you want compatibility with other platforms, aplay if you want to save on size. ALSA is slightly worse in size but may offer better performance compared to aplay.
+</details>
 
 # Credits
-
-- [PoroCYon for vondehi](VONDEHI-LICENSE)
+- [pipe (creator)](https://github.com/ppekko)
+- [PoroCYon for vondehi](VONDEHI-LICENSE) (original vondehi found [here](https://gitlab.com/PoroCYon/vondehi))
