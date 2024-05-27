@@ -72,7 +72,9 @@ typedef struct {
         float *buffer;
         float songtime;
         uint64_t samples_played;
+#ifdef TDAW_MULTITHREAD
         pthread_t thread;
+#endif
 } TDAW_PIP;
 
 #ifdef TDAW_MULTITHREAD
@@ -238,7 +240,9 @@ typedef struct {
         float *buffer;
         float songtime;
         uint64_t samples_played;
+#ifdef TDAW_MULTITHREAD
         pthread_t thread;
+#endif
 } TDAW_PIP;
 
 #ifdef TDAW_MULTITHREAD
@@ -386,7 +390,9 @@ typedef struct {
         float *buffer;
         float songtime;
         uint64_t samples_played;
+#ifdef TDAW_MULTITHREAD
         pthread_t thread;
+#endif
 } TDAW_PIP;
 
 #ifdef TDAW_MULTITHREAD
